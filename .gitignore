@@ -1,0 +1,11 @@
+# Virtual environment
+.venv/
+venv/
+env/
+
+models/
+checkpoints/
+
+# Python cache
+**/__pycache__/
+*.py[cod]

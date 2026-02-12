@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+scikit-learn
+pandas
+numpy
+setfit
+sentence-transformers
+xgboost
+presidio-analyzer
+redis
+locust
+pytest
+httpx
