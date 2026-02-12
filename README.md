@@ -1,8 +1,8 @@
 # Document Classification System
 
-A production-grade REST API for classifying documents into 10 categories with out-of-distribution (OOD) detection.
+A production-grade REST API for classifying documents into 10 categories with out-of-distribution (OOD) detection, optimized using **Optuna** across **7 CPU-only retrieval methods**.
 
-**Test F1: 96.2%** | **Inference: < 25ms** | **25/25 Tests Passing**
+**Test F1: 92.8%** | **7 Retrieval Methods** | **Optuna 80-Trial TPE** | **25/25 Tests Passing**
 
 ---
 
@@ -17,8 +17,8 @@ python -m venv .venv
 # 2. Install dependencies
 pip install -r requirements.txt
 
-# 3. Train model (hyperparameter search across 10 configs)
-python scripts/7_hyperparam_search.py
+# 3. Train model (Optuna search across 7 retrieval methods)
+python scripts/8_optuna_retrieval_search.py
 
 # 4. Start API
 python scripts/run_api.py
@@ -44,15 +44,23 @@ curl -X POST http://127.0.0.1:8000/classify_document \
   "confidence": 0.9872,
   "is_ood": false,
   "processing_time_ms": 1.23,
-  "model_version": "tuned_v9_no_stopwords"
+  "model_version": "optuna_tfidf"
 }
 ```
 
-### Health Check
+## Retrieval Methods
 
-```bash
-curl http://127.0.0.1:8000/health
-```
+The system explores 7 CPU-only retrieval methods as feature extractors:
+
+| Method | Type | Key Parameters |
+|---|---|---|
+| **TF-IDF** | Term weighting | `max_features`, `ngram_range`, `sublinear_tf` |
+| **BM25 (Okapi)** | Probabilistic | `k1`, `b` |
+| **BM25L** | BM25 variant | `k1`, `b`, `delta` |
+| **BM25+** | BM25 variant | `k1`, `b`, `delta` |
+| **LMIR Jelinek-Mercer** | Language model | `lambda` |
+| **LMIR Dirichlet** | Language model | `mu` |
+| **DFR** | Divergence from Randomness | `c` |
 
 ## Categories
 
@@ -64,35 +72,24 @@ curl http://127.0.0.1:8000/health
 # Unit + Security tests (25 tests)
 python -m pytest tests/ -v
 
-# Security tests only
-python -m pytest tests/test_security.py -v
-
 # Load test (requires API running)
 python -m locust -f tests/locustfile.py --headless -u 50 -r 10 -t 30s --host http://127.0.0.1:8000
 ```
 
 ## Hyperparameter Search
 
-The model was selected from 10 TF-IDF + SGD configurations:
+### Optuna (Recommended)
+```bash
+python scripts/8_optuna_retrieval_search.py
+```
+- 80 trials, TPE sampler, 7 retrieval methods
+- Per-trial 30s timeout with skip logging
+- Results saved to `models/results.json`
 
+### Manual Grid Search (Legacy)
 ```bash
 python scripts/7_hyperparam_search.py
 ```
-
-Results saved to `models/results.json`. Winner: **v9_no_stopwords** (F1=0.9616).
-
-## EDA
-
-```bash
-python notebooks/eda.py
-```
-
-Generates 5 analysis charts in `notebooks/`:
-- `class_distribution.png` — class balance across splits
-- `document_lengths.png` — character/word distributions
-- `tfidf_top_terms.png` — top TF-IDF features per class
-- `ood_analysis.png` — OOD class imbalance justification
-- `hyperparam_search.png` — 10-config comparison
 
 ## Docker
 
@@ -111,7 +108,8 @@ docker run -p 8000:8000 doc-classifier
 │   ├── security.py      # Input sanitization + PII detection
 │   └── cache.py         # Redis caching layer
 ├── scripts/
-│   ├── 7_hyperparam_search.py  # 10-config tuning
+│   ├── 8_optuna_retrieval_search.py  # Optuna + 7 retrieval methods
+│   ├── 7_hyperparam_search.py        # Manual 10-config search
 │   └── run_api.py       # API launcher
 ├── tests/
 │   ├── test_api.py      # 15 API endpoint tests
@@ -121,7 +119,7 @@ docker run -p 8000:8000 doc-classifier
 │   └── eda.py           # Exploratory data analysis
 ├── models/
 │   ├── baseline.joblib  # Trained model artifact
-│   └── results.json     # Hyperparameter search results
+│   └── results.json     # Optuna search results (80 trials)
 ├── data/training/       # Train/val/test CSV splits
 ├── Dockerfile           # Production container
 ├── BOARD_REPORT.md      # Executive summary
