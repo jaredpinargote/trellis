@@ -1,23 +1,10 @@
 # Master Project Blueprint: Legal Document Classification System
 
-**Status:** Phase 1 (Data) & Phase 2 (Modeling) COMPLETE.
-**Next Action:** Execute Phase 3 (API Engineering).
-**Owner:** AI Software Engineer Agent.
+**Status:** Phase 1 (Data) done
 
 ---
 
 ## 1. Executive Summary & Decision Log
-We have completed a rigorous "Model Shootout" comparing classical ML (TF-IDF) against modern Deep Learning (XGBoost w/ Embeddings, SetFit).
-
-### The "Senior" Decision
-**We have selected the Baseline Model (TF-IDF + SVM) for production.**
-
-*   **Why?**
-    *   **Performance:** It achieved **94% Test Accuracy** (vs. 92% for SetFit).
-    *   **OOD Detection:** It demonstrated superior recall (83%) and precision (50%) on the "Other" class compared to the deep learning models, which struggled to distinguish "Unknown" from "Known" due to embedding noise.
-    *   **Efficiency:** Training time is **0.25 seconds** (vs. 21 minutes for SetFit). Inference is sub-millisecond.
-    *   **Simplicity:** It requires no GPU and has minimal dependencies, significantly reducing operational complexity and Docker image size.
-
 ### The "Other" Class Strategy (Crucial Context)
 *   **The Constraint:** The dataset contained only 6 "Other" documents vs 1,000 known documents.
 *   **The Solution:** We **rejected** training on "Other". We moved 100% of "Other" to the **Test Set**.
@@ -26,6 +13,9 @@ We have completed a rigorous "Model Shootout" comparing classical ML (TF-IDF) ag
     *   **API Logic:** If `model.predict_proba() < Threshold`, the API *must* override the prediction to `"Other"`.
 
 ---
+
+## 2. Phase 2: Model Shootout
+train a tfidf model, and many other models legeraging gpu for training as well as hyperparameter finetuning. make sure all models are saved, all scripts for training are saved, and all results are saved. you should have 6 different model architectures and several hyperparameter configurations, training runs, and results reports for each model.
 
 ## 2. Phase 3: API Engineering Guidelines
 **Objective:** Build a robust, production-grade REST API using `FastAPI`.
