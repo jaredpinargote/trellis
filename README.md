@@ -1,67 +1,129 @@
-# Legal Document Classification System
+# Document Classification System
 
-This project implements a machine learning system to classify legal documents into 10 categories (e.g., Contract, Statute, Judgment) plus an "Other" category for out-of-distribution detection.
+A production-grade REST API for classifying documents into 10 categories with out-of-distribution (OOD) detection.
+
+**Test F1: 96.2%** | **Inference: < 25ms** | **25/25 Tests Passing**
+
+---
 
 ## Quick Start
 
-### Prerequisites
-*   Python 3.10+
-*   Docker (Optional)
-
-### Installation
-1.  Create a virtual environment:
-    ```bash
-    python -m venv .venv
-    # Windows
-    .venv\Scripts\activate
-    # Mac/Linux
-    source .venv/bin/activate
-    ```
-2.  Install dependencies:
-    ```bash
-    pip install -r requirements.txt
-    ```
-
-### Training
-To reproduce the baseline model:
 ```bash
-python scripts/4_train_baseline.py
-```
-This saves the model and threshold to `models/baseline.joblib`.
+# 1. Create virtual environment
+python -m venv .venv
+.venv\Scripts\activate  # Windows
+# source .venv/bin/activate  # Linux/Mac
 
-### Running the API
-Start the FastAPI server:
-```bash
-uvicorn app.main:app --host 0.0.0.0 --port 8000
-```
-Or use the helper script:
-```bash
+# 2. Install dependencies
+pip install -r requirements.txt
+
+# 3. Train model (hyperparameter search across 10 configs)
+python scripts/7_hyperparam_search.py
+
+# 4. Start API
 python scripts/run_api.py
-```
-*   **Swagger UI:** http://127.0.0.1:8000/docs
-*   **Health Check:** http://127.0.0.1:8000/health
-
-### Testing
-Run unit tests:
-```bash
-pytest
-```
-Run load tests:
-```bash
-locust -f tests/locustfile.py --headless -u 10 -r 2 -t 10s --host http://127.0.0.1:8000
+# → http://127.0.0.1:8000/docs
 ```
 
-## Docker Deployment
-Build the lightweight container:
+## API Usage
+
+### Classify a Document
+
 ```bash
-docker build -t legal-classifier:latest .
-```
-Run the container:
-```bash
-docker run -p 8000:8000 legal-classifier:latest
+curl -X POST http://127.0.0.1:8000/classify_document \
+  -H "Content-Type: application/json" \
+  -d '{"document_text": "The quarterback threw a touchdown pass in the championship game."}'
 ```
 
-## Architecture
-*   **Models:** Comparison of TF-IDF+SVM vs SetFit vs XGBoost. Selected Baseline for speed/accuracy.
-*   **Security:** PII detection (Presidio) + Payload validation.
-*   **Caching:** Redis support (auto-fallback if not available).
+**Response:**
+
+```json
+{
+  "message": "Classification successful",
+  "label": "sport",
+  "confidence": 0.9872,
+  "is_ood": false,
+  "processing_time_ms": 1.23,
+  "model_version": "tuned_v9_no_stopwords"
+}
+```
+
+### Health Check
+
+```bash
+curl http://127.0.0.1:8000/health
+```
+
+## Categories
+
+`business` · `entertainment` · `food` · `graphics` · `historical` · `medical` · `politics` · `space` · `sport` · `technologie` · `other` (OOD)
+
+## Testing
+
+```bash
+# Unit + Security tests (25 tests)
+python -m pytest tests/ -v
+
+# Security tests only
+python -m pytest tests/test_security.py -v
+
+# Load test (requires API running)
+python -m locust -f tests/locustfile.py --headless -u 50 -r 10 -t 30s --host http://127.0.0.1:8000
+```
+
+## Hyperparameter Search
+
+The model was selected from 10 TF-IDF + SGD configurations:
+
+```bash
+python scripts/7_hyperparam_search.py
+```
+
+Results saved to `models/results.json`. Winner: **v9_no_stopwords** (F1=0.9616).
+
+## EDA
+
+```bash
+python notebooks/eda.py
+```
+
+Generates 5 analysis charts in `notebooks/`:
+- `class_distribution.png` — class balance across splits
+- `document_lengths.png` — character/word distributions
+- `tfidf_top_terms.png` — top TF-IDF features per class
+- `ood_analysis.png` — OOD class imbalance justification
+- `hyperparam_search.png` — 10-config comparison
+
+## Docker
+
+```bash
+docker build -t doc-classifier .
+docker run -p 8000:8000 doc-classifier
+```
+
+## Project Structure
+
+```
+├── app/
+│   ├── main.py          # FastAPI application
+│   ├── schemas.py       # Request/response models
+│   ├── inference.py     # Model wrapper + OOD detection
+│   ├── security.py      # Input sanitization + PII detection
+│   └── cache.py         # Redis caching layer
+├── scripts/
+│   ├── 7_hyperparam_search.py  # 10-config tuning
+│   └── run_api.py       # API launcher
+├── tests/
+│   ├── test_api.py      # 15 API endpoint tests
+│   ├── test_security.py # 10 sanitization tests
+│   └── locustfile.py    # High-throughput load test
+├── notebooks/
+│   └── eda.py           # Exploratory data analysis
+├── models/
+│   ├── baseline.joblib  # Trained model artifact
+│   └── results.json     # Hyperparameter search results
+├── data/training/       # Train/val/test CSV splits
+├── Dockerfile           # Production container
+├── BOARD_REPORT.md      # Executive summary
+└── requirements.txt     # Python dependencies
+```

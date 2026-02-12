@@ -1,58 +1,60 @@
-from fastapi import FastAPI, Depends, Request
+from fastapi import FastAPI, Depends
 from .schemas import DocumentRequest, PredictionResponse
 from .inference import model_wrapper
-from .security import validate_payload_size, check_pii
+from .security import validate_payload_size, sanitize_text, check_pii
 from .cache import cache
 
 app = FastAPI(
-    title="Legal Document Classifier API",
-    description="Classifies legal documents into 10 categories + 'Other' (OOD detection).",
+    title="Document Classifier API",
+    description="Classifies documents into 10 categories + 'Other' (OOD detection).",
     version="1.0.0"
 )
 
-@app.post("/classify_document", response_model=PredictionResponse, dependencies=[Depends(validate_payload_size)])
+
+@app.post(
+    "/classify_document",
+    response_model=PredictionResponse,
+    dependencies=[Depends(validate_payload_size)]
+)
 async def classify_document_endpoint(request: DocumentRequest):
     """
-    Classifies a legal document text.
-    
-    - **Payload Check**: Rejects > 2MB bodies.
-    - **Cache Check**: Returns cached result if available (SHA-256 key).
-    - **PII Check**: Scans for sensitive info and logs warnings.
-    - **Inference**: TF-IDF + SVM with Confidence Thresholding for 'Other' class.
+    Classifies a document text.
+
+    Pipeline: Payload Check -> Sanitize -> Cache -> PII Scan -> Inference -> Cache Set
     """
-    
-    # 1. Check Cache
-    # We check cache before PII check to save compute, assuming cached result implies prior successful processing
-    cached = cache.get(request.text)
+
+    # 1. Sanitize input (strip HTML, injection patterns, control chars)
+    clean_text = sanitize_text(request.document_text)
+
+    # 2. Check Cache (on sanitized text)
+    cached = cache.get(clean_text)
     if cached:
-        # Add header to indicate cache hit? Not essential for response model but good for debug
         return cached
 
-    # 2. Security Check (PII)
-    # This just logs warnings, does not block
-    check_pii(request.text)
+    # 3. PII Scan (log only, does not block)
+    check_pii(clean_text)
 
-    # 3. Inference
-    result = model_wrapper.predict(request.text)
+    # 4. Inference
+    result = model_wrapper.predict(clean_text)
 
-    # 4. Set Cache
-    cache.set(request.text, result)
+    # 5. Set Cache
+    cache.set(clean_text, result)
 
     return result
 
+
 @app.get("/health")
 def health():
-    """
-    Health check endpoint.
-    """
+    """Health check endpoint."""
     return {
-        "status": "healthy", 
+        "status": "healthy",
         "model_loaded": model_wrapper.pipeline is not None,
+        "model_version": model_wrapper.model_version,
         "model_threshold": model_wrapper.threshold,
         "cache_enabled": cache.enabled
     }
 
+
 if __name__ == "__main__":
     import uvicorn
-    # Allow running directly for debug
     uvicorn.run(app, host="0.0.0.0", port=8000)

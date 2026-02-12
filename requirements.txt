@@ -11,3 +11,5 @@ redis
 locust
 pytest
 httpx
+matplotlib
+joblib
