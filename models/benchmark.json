@@ -1,0 +1,161 @@
+{
+  "baseline_memory_mb": 39.2,
+  "disk_size_bytes": 588855,
+  "disk_size_human": "575.05 KB",
+  "cold_start_ms": {
+    "mean": 330.8,
+    "median": 18.0,
+    "min": 14.1,
+    "max": 1584.6,
+    "samples": [
+      1584.6,
+      16.6,
+      20.9,
+      18.0,
+      14.1
+    ]
+  },
+  "model_memory_mb": 150.2,
+  "model_overhead_mb": 111.0,
+  "warmup": {
+    "first_5_mean_ms": 0.56,
+    "last_5_mean_ms": 0.34,
+    "slowdown_factor": 1.6
+  },
+  "latency": {
+    "short": {
+      "mean_ms": 0.413,
+      "median_ms": 0.401,
+      "p95_ms": 0.546,
+      "p99_ms": 0.693,
+      "min_ms": 0.311,
+      "max_ms": 1.578,
+      "std_ms": 0.094,
+      "text_chars": 25,
+      "text_words": 4
+    },
+    "medium": {
+      "mean_ms": 0.437,
+      "median_ms": 0.402,
+      "p95_ms": 0.652,
+      "p99_ms": 0.843,
+      "min_ms": 0.312,
+      "max_ms": 1.008,
+      "std_ms": 0.111,
+      "text_chars": 170,
+      "text_words": 25
+    },
+    "long": {
+      "mean_ms": 0.534,
+      "median_ms": 0.501,
+      "p95_ms": 0.818,
+      "p99_ms": 1.067,
+      "min_ms": 0.37,
+      "max_ms": 1.336,
+      "std_ms": 0.142,
+      "text_chars": 783,
+      "text_words": 117
+    },
+    "very_long": {
+      "mean_ms": 0.808,
+      "median_ms": 0.796,
+      "p95_ms": 1.112,
+      "p99_ms": 1.274,
+      "min_ms": 0.566,
+      "max_ms": 1.897,
+      "std_ms": 0.169,
+      "text_chars": 3919,
+      "text_words": 585
+    }
+  },
+  "peak_memory": {
+    "pre_inference_mb": 150.4,
+    "post_batch_100_mb": 150.4,
+    "post_gc_mb": 150.4,
+    "spike_mb": 0.0
+  },
+  "throughput": {
+    "batch_1": {
+      "batch_size": 1,
+      "total_requests": 1000,
+      "total_time_sec": 0.422,
+      "requests_per_sec": 2372.1,
+      "ms_per_request": 0.422
+    },
+    "batch_10": {
+      "batch_size": 10,
+      "total_requests": 1000,
+      "total_time_sec": 0.067,
+      "requests_per_sec": 14921.9,
+      "ms_per_request": 0.067
+    },
+    "batch_50": {
+      "batch_size": 50,
+      "total_requests": 1000,
+      "total_time_sec": 0.025,
+      "requests_per_sec": 39747.4,
+      "ms_per_request": 0.025
+    },
+    "batch_100": {
+      "batch_size": 100,
+      "total_requests": 1000,
+      "total_time_sec": 0.021,
+      "requests_per_sec": 46882.8,
+      "ms_per_request": 0.021
+    }
+  },
+  "cpu": {
+    "usage_percent": 29.7,
+    "logical_cores": 22,
+    "requests_in_3s": 6700
+  },
+  "cost_estimation": {
+    "AWS t3.micro (2 vCPU, 1GB)": {
+      "cost_per_hour": 0.0104,
+      "cost_per_month": 7.59,
+      "cost_per_1m_requests": 0.0012,
+      "note": "Free tier eligible"
+    },
+    "AWS t3.small (2 vCPU, 2GB)": {
+      "cost_per_hour": 0.0208,
+      "cost_per_month": 15.18,
+      "cost_per_1m_requests": 0.0024,
+      "note": "Recommended minimum"
+    },
+    "AWS t3.medium (2 vCPU, 4GB)": {
+      "cost_per_hour": 0.0416,
+      "cost_per_month": 30.37,
+      "cost_per_1m_requests": 0.0049,
+      "note": "Comfortable headroom"
+    },
+    "GCP e2-micro (2 vCPU, 1GB)": {
+      "cost_per_hour": 0.0084,
+      "cost_per_month": 6.13,
+      "cost_per_1m_requests": 0.001,
+      "note": "Free tier eligible"
+    },
+    "GCP e2-small (2 vCPU, 2GB)": {
+      "cost_per_hour": 0.0168,
+      "cost_per_month": 12.26,
+      "cost_per_1m_requests": 0.002,
+      "note": "Recommended minimum"
+    },
+    "Azure B1s (1 vCPU, 1GB)": {
+      "cost_per_hour": 0.0104,
+      "cost_per_month": 7.59,
+      "cost_per_1m_requests": 0.0012,
+      "note": "Free 750h/mo"
+    }
+  },
+  "daily_capacity_single": 204949440,
+  "daily_capacity_batch": 4050673920,
+  "prod_readiness": {
+    "Latency < 50ms (p99)": "True",
+    "Throughput > 100 req/s": true,
+    "Cold start < 2s": "True",
+    "Model < 50MB disk": true,
+    "RAM overhead < 200MB": true,
+    "Memory spike < 500MB": true
+  },
+  "all_checks_pass": true
+}
