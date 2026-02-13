@@ -1,5 +1,5 @@
 # Base Image: Lightweight Python
-FROM python:3.10-slim as builder
+FROM python:3.10-slim AS builder
 
 # Set env vars to suppress warnings and bytecode
 ENV PYTHONDONTWRITEBYTECODE=1

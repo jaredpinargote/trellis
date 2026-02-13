@@ -4,6 +4,7 @@ venv/
 env/
 
 models/
+!models/baseline.joblib
 checkpoints/
 
 # Python cache
