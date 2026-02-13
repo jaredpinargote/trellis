@@ -6,13 +6,25 @@ logger = logging.getLogger(__name__)
 
 try:
     from presidio_analyzer import AnalyzerEngine
+    from presidio_analyzer.nlp_engine import NlpEngineProvider
     HAS_PRESIDIO = True
-    analyzer: AnalyzerEngine | None = AnalyzerEngine()
-    logger.info("Presidio Analyzer initialized.")
+    
+    # Configure to use en_core_web_sm (small model) matching Dockerfile
+    provider = NlpEngineProvider(nlp_configuration={
+        "nlp_engine_name": "spacy",
+        "models": [{"lang_code": "en", "model_name": "en_core_web_sm"}]
+    })
+    
+    analyzer: AnalyzerEngine | None = AnalyzerEngine(nlp_engine=provider.create_engine())
+    logger.info("Presidio Analyzer initialized with en_core_web_sm.")
 except ImportError:
     HAS_PRESIDIO = False
     analyzer = None
     logger.warning("Presidio Analyzer not found. PII detection disabled.")
+except Exception as e:
+    HAS_PRESIDIO = False
+    analyzer = None
+    logger.warning(f"Presidio Analyzer init failed: {e}")
 
 MAX_PAYLOAD_SIZE = 2 * 1024 * 1024  # 2MB
 

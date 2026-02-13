@@ -1,8 +1,9 @@
-fastapi
-uvicorn
-scikit-learn
+fastapi==0.129.0
+uvicorn==0.40.0
+scikit-learn==1.8.0
 numpy
 joblib
 redis
 presidio-analyzer
 spacy
+pydantic-settings>=2.0.0
