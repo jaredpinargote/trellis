@@ -1,33 +1,41 @@
 import joblib
+import logging
 import time
 import numpy as np
 from pathlib import Path
-from .schemas import PredictionResponse
+from app.schemas import PredictionResponse
+from app.core.config import Settings
 
-# Import custom transformers so joblib can deserialize them
-# from .transformers import DFRVectorizer  # noqa: F401 (Reverted to TF-IDF for stability)
+logger = logging.getLogger(__name__)
 
-BASE_DIR = Path(__file__).resolve().parent.parent
-MODEL_PATH = BASE_DIR / "models" / "baseline.joblib"
-
-
-class ModelWrapper:
-    def __init__(self):
+class ModelService:
+    def __init__(self, settings: Settings):
         self.pipeline = None
-        self.threshold = 0.5
+        self.threshold = settings.MODEL_THRESHOLD
         self.classes_ = []
         self.model_version = "unknown"
+        
+        # Resolve model path relative to project root (assuming we are in app/services)
+        # Better: config should provide MODEL_PATH, but for now we follow the pattern
+        # current file: app/services/inference.py -> root is ../..
+        self.base_dir = Path(__file__).resolve().parent.parent.parent
+        self.model_path = self.base_dir / "models" / "baseline.joblib"
+        
         self._load_model()
 
     def _load_model(self):
-        if not MODEL_PATH.exists():
-            raise FileNotFoundError(f"Model artifact not found at {MODEL_PATH}")
+        if not self.model_path.exists():
+            raise FileNotFoundError(f"Model artifact not found at {self.model_path}")
 
-        print(f"Loading model from {MODEL_PATH}...")
-        artifact = joblib.load(MODEL_PATH)
+        logger.info(f"Loading model from {self.model_path}...")
+        # Shim for unpickling: 'app.transformers' might be missing if we moved it.
+        # But we decided to keep app/transformers.py as a shim, so it should work.
+        artifact = joblib.load(self.model_path)
 
         self.pipeline = artifact.get('pipeline')
-        self.threshold = artifact.get('threshold', 0.5)
+        # Allow artifact to override config threshold if present? 
+        # Or enforce config? Let's respect artifact for now as it's model-specific.
+        self.threshold = artifact.get('threshold', self.threshold)
         self.model_version = artifact.get('model_version', 'unknown')
 
         if self.pipeline is None:
@@ -36,7 +44,7 @@ class ModelWrapper:
         if hasattr(self.pipeline, 'classes_'):
             self.classes_ = self.pipeline.classes_
 
-        print(f"Model loaded. Threshold: {self.threshold:.4f}, Version: {self.model_version}")
+        logger.info(f"Model loaded. Threshold: {self.threshold:.4f}, Version: {self.model_version}")
 
     def predict(self, document_text: str) -> PredictionResponse:
         start_time = time.time()
@@ -67,7 +75,3 @@ class ModelWrapper:
             processing_time_ms=round(duration, 2),
             model_version=self.model_version
         )
-
-
-# Global singleton
-model_wrapper = ModelWrapper()

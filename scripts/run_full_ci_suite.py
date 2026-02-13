@@ -43,7 +43,7 @@ def run_ci_suite():
     steps = []
     
     # 1. Type Checking
-    steps.append(("Type Checking (mypy)", [sys.executable, "-m", "mypy", "app"]))
+    steps.append(("Type Checking (pyright)", [sys.executable, "-m", "pyright", "app"]))
     
     # 2. Unit Tests
     steps.append(("Unit Tests (pytest)", [sys.executable, "-m", "pytest"]))

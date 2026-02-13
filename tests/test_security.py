@@ -2,7 +2,7 @@
 Security-focused tests for the sanitize_text function.
 """
 import pytest
-from app.security import sanitize_text
+from app.core.security import sanitize_text
 
 
 class TestSanitizeText:

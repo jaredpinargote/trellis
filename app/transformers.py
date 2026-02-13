@@ -1,3 +1,4 @@
+# pyright: reportOptionalSubscript=false, reportAttributeAccessIssue=false
 """
 Custom retrieval-model transformers used by the production pipeline.
 These must be importable at API startup so joblib can deserialize them.
@@ -21,15 +22,16 @@ class DFRVectorizer(BaseEstimator, TransformerMixin):
         self.max_features = max_features
         self.ngram_range = ngram_range
 
-    def fit(self, X, y=None):
+    def fit(self, X, y=None):  # type: ignore[override]
         self.cv_ = CountVectorizer(
             max_features=self.max_features, ngram_range=self.ngram_range
         )
         tf_raw = self.cv_.fit_transform(X)
-        n_docs = tf_raw.shape[0]
+        assert tf_raw is not None  # CountVectorizer always returns a matrix
+        n_docs: int = tf_raw.shape[0]
         cf = np.asarray(tf_raw.sum(axis=0)).flatten().astype(np.float64)
         self.idf_dfr_ = np.log2(1.0 + (n_docs + 1.0) / (cf + 0.5))
-        self.avgdl_ = tf_raw.sum(axis=1).mean()
+        self.avgdl_: float = float(np.asarray(tf_raw.sum(axis=1)).mean())
         return self
 
     def transform(self, X):

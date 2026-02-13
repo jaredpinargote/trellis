@@ -2,15 +2,17 @@ import re
 import logging
 from fastapi import Request, HTTPException
 
+logger = logging.getLogger(__name__)
+
 try:
     from presidio_analyzer import AnalyzerEngine
     HAS_PRESIDIO = True
     analyzer: AnalyzerEngine | None = AnalyzerEngine()
-    print("Presidio Analyzer initialized.")
+    logger.info("Presidio Analyzer initialized.")
 except ImportError:
     HAS_PRESIDIO = False
     analyzer = None
-    print("Presidio Analyzer not found. PII detection disabled.")
+    logger.warning("Presidio Analyzer not found. PII detection disabled.")
 
 MAX_PAYLOAD_SIZE = 2 * 1024 * 1024  # 2MB
 
@@ -77,7 +79,7 @@ def sanitize_text(text: str) -> str:
     text = re.sub(r' {3,}', '  ', text)
 
     if warnings_found:
-        logging.warning(f"[SECURITY] Input sanitization triggered: {warnings_found}")
+        logger.warning(f"[SECURITY] Input sanitization triggered: {warnings_found}")
 
     return text.strip()
 
@@ -95,4 +97,4 @@ def check_pii(text: str):
         )
         if results:
             pii_types = list(set([res.entity_type for res in results]))
-            logging.warning(f"[SECURITY] PII Detected in request: {pii_types}")
+            logger.warning(f"[SECURITY] PII Detected in request: {pii_types}")

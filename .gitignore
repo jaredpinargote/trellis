@@ -3,6 +3,7 @@
 venv/
 env/
 
+# Data & model checkpoints
 checkpoints/
 
 # Python cache
@@ -10,3 +11,21 @@ checkpoints/
 *.py[cod]
 .mypy_cache
 .pytest_cache
+
+# Type checking
+.pyright/
+
+# Environment / secrets
+.env
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+
+# Temp files
+*.tmp
+git_status.txt
