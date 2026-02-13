@@ -1,4 +1,6 @@
 import time
+import logging
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, Request
 from fastapi.responses import JSONResponse
 from app.schemas import DocumentRequest, PredictionResponse
@@ -9,10 +11,24 @@ from app.api.dependencies import get_model_service, get_cache_service
 from app.services.inference import ModelService
 from app.services.cache import CacheManager
 
+logger = logging.getLogger(__name__)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Eagerly load model + cache at startup so the server is ready immediately."""
+    t0 = time.time()
+    settings = get_settings()
+    model = get_model_service(settings)
+    cache = get_cache_service(settings)
+    elapsed = time.time() - t0
+    logger.info(f"🟢 Ready to serve — model={model.model_version}, cache={'on' if cache.enabled else 'off'}, loaded in {elapsed:.1f}s")
+    yield
+
 app = FastAPI(
     title="Document Classifier API",
     description="Classifies documents into 10 categories + 'Other' (OOD detection).",
-    version="2.0.0"
+    version="2.0.0",
+    lifespan=lifespan,
 )
 
 # Telemetry is singleton-ish by nature of being a collector
