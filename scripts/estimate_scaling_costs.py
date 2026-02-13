@@ -1,122 +1,130 @@
+"""
+Estimate Scaling Costs: Benchmark API latency and project cloud costs.
+=====================================================================
+Sends requests to a running API and estimates AWS Lambda/EC2 costs
+for processing 1M documents at observed throughput.
+
+Usage: python scripts/estimate_scaling_costs.py
+(Ensure API is running: uvicorn app.main:app --port 8000)
+"""
 import time
 import requests
 import statistics
 import concurrent.futures
+import sys
+
+sys.stdout.reconfigure(encoding='utf-8')
 
 # --- Configuration ---
 API_URL = "http://localhost:8000/classify_document"
-BATCH_SIZE = 100  # Number of requests for benchmark
+HEALTH_URL = "http://localhost:8000/health"
+SEQUENTIAL_BATCH = 20    # Sequential requests for true latency measurement
+CONCURRENT_BATCH = 100   # Concurrent requests for throughput measurement
+CONCURRENCY = 5          # Thread pool size
 TARGET_DOCS = 1_000_000
 
 # Cloud Cost Assumptions (Approximate Retail Rates)
-# AWS Lambda (x86, 512MB RAM): ~$0.0000008333 per 100ms * GB-second
-# Request charge: $0.20 per 1M requests
-LAMBDA_GB_SEC_RATE = 0.0000166667 # per GB-second
+LAMBDA_GB_SEC_RATE = 0.0000166667  # per GB-second
 LAMBDA_REQ_RATE = 0.20 / 1_000_000
+EC2_HOURLY_RATE = 0.0416  # t3.medium (2 vCPU, 4GB)
 
-# EC2 t3.medium (2 vCPU, 4GB RAM): ~$0.0416 per hour
-EC2_HOURLY_RATE = 0.0416
 
-def benchmark_api():
-    print(f"--- Benchmarking API ({BATCH_SIZE} requests) ---")
-    
+def measure_sequential_latency(session):
+    """Measure true per-request latency (no queueing effects)."""
+    print(f"--- Phase 1: Sequential Latency ({SEQUENTIAL_BATCH} requests) ---")
+
     payload = {"document_text": "The stock market rallied yesterday as the tech sector showed strong quarterly earnings."}
-    
     times = []
-    success_count = 0
-    
-    start_global = time.time()
-    
-    # Simple synchronous benchmark for baseline latency
-    # For throughput, we'd ideally use async/threads, let's use a small thread pool
-    # to simulate "realistic" ingestion client.
-    
-    # Define a task that measures its own latency
-    def measured_request():
+
+    for i in range(SEQUENTIAL_BATCH):
         t0 = time.time()
-        try:
-            r = requests.post(API_URL, json=payload)
-            lat = time.time() - t0
-            return r, lat
-        except Exception as e:
-            return None, 0
+        r = session.post(API_URL, json=payload)
+        lat = time.time() - t0
+        if r.status_code == 200:
+            times.append(lat)
+            # Also capture the server-reported processing time
+            server_time = r.json().get("processing_time_ms", 0)
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
-        futures = [executor.submit(measured_request) for _ in range(BATCH_SIZE)]
-        
-        for f in concurrent.futures.as_completed(futures):
-            try:
-                resp, lat = f.result()
-                if resp and resp.status_code == 200:
-                    success_count += 1
-                    times.append(lat)
-            except Exception as e:
-                print(f"Request failed: {e}")
-
-    total_time = time.time() - start_global
-    
     if not times:
-        print("❌ Benchmark failed. Is the API running?")
+        print("❌ All requests failed.")
         return None
 
-    avg_latency = statistics.mean(times)
-    p99_latency = sorted(times)[int(len(times)*0.99)] if len(times) >= 100 else max(times)
-    tps = success_count / total_time
-    
-    print(f"[PASS] Benchmark Complete.")
-    print(f"   Avg Latency: {avg_latency*1000:.2f} ms")
-    print(f"   Est. Throughput (local): {tps:.2f} docs/sec")
-    
-    return {
-        "tps": tps,
-        "avg_latency": avg_latency
-    }
+    avg = statistics.mean(times)
+    p99 = sorted(times)[int(len(times) * 0.99)] if len(times) >= 20 else max(times)
 
-def estimate_costs(metrics):
-    tps = metrics["tps"]
-    avg_lat = metrics["avg_latency"]
-    
-    print(f"\n--- Cost & Time Forecast (1,000,000 Documents) ---")
-    
-    # 1. Time
-    # If we sustain this TPS
+    print(f"   Avg Latency:  {avg*1000:.1f} ms (includes network round-trip)")
+    print(f"   P99 Latency:  {p99*1000:.1f} ms")
+    print(f"   Server Time:  {server_time:.1f} ms (model inference only)")
+    return {"avg_latency": avg, "p99_latency": p99}
+
+
+def measure_throughput(session):
+    """Measure throughput under concurrency."""
+    print(f"\n--- Phase 2: Throughput ({CONCURRENT_BATCH} requests, {CONCURRENCY} threads) ---")
+
+    payload = {"document_text": "The stock market rallied yesterday as the tech sector showed strong quarterly earnings."}
+
+    def send_request():
+        try:
+            r = session.post(API_URL, json=payload)
+            return r.status_code == 200
+        except Exception:
+            return False
+
+    start = time.time()
+    with concurrent.futures.ThreadPoolExecutor(max_workers=CONCURRENCY) as executor:
+        results = list(executor.map(lambda _: send_request(), range(CONCURRENT_BATCH)))
+    duration = time.time() - start
+
+    success = sum(results)
+    tps = success / duration
+
+    print(f"   Completed:    {success}/{CONCURRENT_BATCH} in {duration:.1f}s")
+    print(f"   Throughput:   {tps:.1f} req/s")
+    print(f"   Success Rate: {success/CONCURRENT_BATCH:.0%}")
+
+    return {"tps": tps, "duration": duration}
+
+
+def estimate_costs(latency_metrics, throughput_metrics):
+    avg_lat = latency_metrics["avg_latency"]
+    tps = throughput_metrics["tps"]
+
+    print(f"\n--- Cost Forecast ({TARGET_DOCS:,} Documents) ---")
+
+    # Time estimate (at measured throughput)
     seconds_needed = TARGET_DOCS / tps
     hours_needed = seconds_needed / 3600
-    print(f"[TIME] Time to Process 1M Docs (Single Node): {hours_needed:.2f} hours")
-    
-    # 2. AWS Lambda Cost
-    # Cost = (Total Requests * Req Rate) + (Total Compute Seconds * GB-Sec Rate * MemoryGB)
-    # Assuming 512MB RAM (0.5 GB)
-    # Compute Seconds = 1M * avg_latency
-    total_compute_seconds = TARGET_DOCS * avg_lat
-    lambda_compute_cost = total_compute_seconds * LAMBDA_GB_SEC_RATE * 0.5
-    lambda_req_cost = TARGET_DOCS * LAMBDA_REQ_RATE
-    total_lambda = lambda_compute_cost + lambda_req_cost
-    
-    print(f"[COST] Est. AWS Lambda Cost (Serverless): ${total_lambda:.2f}")
-    print(f"   (Assumes 512MB RAM, avg latency {avg_lat*1000:.1f}ms per doc)")
+    print(f"   Time (single node):  {hours_needed:.1f} hours")
 
-    # 3. AWS EC2 Cost
-    # Cost = Hours Needed * Hourly Rate
-    # Note: This implies we run perfectly for N hours. 
-    # In reality, we could scale horizontally. 
-    # E.g. 10 instances = 1/10th time, but same total cost (roughly).
+    # Lambda cost
+    total_compute_seconds = TARGET_DOCS * avg_lat
+    lambda_cost = (total_compute_seconds * LAMBDA_GB_SEC_RATE * 0.5) + (TARGET_DOCS * LAMBDA_REQ_RATE)
+    print(f"   AWS Lambda (512MB):  ${lambda_cost:.2f}")
+
+    # EC2 cost
     ec2_cost = hours_needed * EC2_HOURLY_RATE
-    print(f"[COST] Est. EC2 Cost (t3.medium): ${ec2_cost:.2f}")
-    print(f"   (Assumes single instance running for {hours_needed:.1f} hours)")
-    
-    print("\n--------------------------------------------------")
-    print("Recommendation:")
-    if total_lambda < ec2_cost:
-         print("[REC] Lambda is cheaper for this volume (and easier to scale).")
-    else:
-         print("[REC] EC2 is cheaper for this volume (steady state).")
+    print(f"   EC2 (t3.medium):     ${ec2_cost:.2f}")
+
+    print(f"\n   Recommendation: {'Lambda' if lambda_cost < ec2_cost else 'EC2'} is cheaper for this volume.")
+
 
 if __name__ == "__main__":
     try:
-        metrics = benchmark_api()
-        if metrics:
-            estimate_costs(metrics)
+        session = requests.Session()
+
+        # Verify API is running
+        r = session.get(HEALTH_URL)
+        r.raise_for_status()
+        health = r.json()
+        print(f"✅ API healthy | Model: {health['model_version']} | Cache: {'on' if health['cache_enabled'] else 'off'}\n")
+
+        lat = measure_sequential_latency(session)
+        tp = measure_throughput(session)
+
+        if lat and tp:
+            estimate_costs(lat, tp)
+
     except requests.exceptions.ConnectionError:
-        print("[FAIL] Error: Could not connect to API. Is it running on port 8000?")
-        print("Run: uvicorn app.main:app --port 8000")
+        print("❌ Cannot connect. Is the API running on port 8000?")
+        print("   Run: uvicorn app.main:app --port 8000")
