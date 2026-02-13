@@ -5,7 +5,7 @@ from fastapi import Request, HTTPException
 try:
     from presidio_analyzer import AnalyzerEngine
     HAS_PRESIDIO = True
-    analyzer = AnalyzerEngine()
+    analyzer: AnalyzerEngine | None = AnalyzerEngine()
     print("Presidio Analyzer initialized.")
 except ImportError:
     HAS_PRESIDIO = False

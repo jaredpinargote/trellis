@@ -12,6 +12,7 @@ TTL = 86400  # 24 hours
 class CacheManager:
     def __init__(self):
         self.enabled = False
+        self.client: redis.Redis | None = None
         try:
             self.client = redis.Redis(
                 host=REDIS_HOST, port=REDIS_PORT, db=0, socket_connect_timeout=1
@@ -28,19 +29,20 @@ class CacheManager:
         return hashlib.sha256(document_text.encode('utf-8')).hexdigest()
 
     def get(self, document_text: str):
-        if not self.enabled:
+        if not self.enabled or not self.client:
             return None
         try:
             key = self.get_key(document_text)
             data = self.client.get(key)
             if data:
-                return PredictionResponse(**json.loads(data))
+                # Redis returns bytes, json.loads handles it but explicit decode is safer
+                return PredictionResponse(**json.loads(data.decode('utf-8')))
         except Exception as e:
             print(f"Cache GET error: {e}")
         return None
 
     def set(self, document_text: str, response: PredictionResponse):
-        if not self.enabled:
+        if not self.enabled or not self.client:
             return
         try:
             key = self.get_key(document_text)

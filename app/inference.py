@@ -41,6 +41,9 @@ class ModelWrapper:
     def predict(self, document_text: str) -> PredictionResponse:
         start_time = time.time()
 
+        if self.pipeline is None:
+             raise ValueError("Model pipeline is not loaded.")
+
         probs = self.pipeline.predict_proba([document_text])[0]
 
         max_prob = np.max(probs)

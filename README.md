@@ -46,7 +46,8 @@ We have provided specific scripts to verify the "Exceeded Expectations" criteria
 
 1.  **[Evidence of Excellence](self_assessment.md)**: A detailed scorecard mapping features to requirements.
 2.  **Fresh Install Check**: Run `python scripts/verify_fresh_install.py` to validate your environment.
-3.  **Demo Scripts**:
+3.  **Full Ecosystem Check**: Run `python scripts/verify_ecosystem.py` for a complete "One Command" system verification (Tests, Metrics, Costs, Resilience).
+4.  **Demo Scripts**:
 
 | Script | Goal | Expected Result |
 |---|---|---|

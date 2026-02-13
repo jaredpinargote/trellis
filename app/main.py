@@ -26,7 +26,7 @@ class Telemetry:
         self.total_errors = 0
         self.cache_hits = 0
         self.cache_misses = 0
-        self.latencies = deque(maxlen=max_latencies)
+        self.latencies: deque[float] = deque(maxlen=max_latencies)
         self.label_counts = {}
 
     def record_request(self, latency_ms, label, is_cached=False, is_error=False):

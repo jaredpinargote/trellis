@@ -14,3 +14,4 @@ httpx
 matplotlib
 joblib
 optuna
+mypy
