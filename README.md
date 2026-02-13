@@ -102,9 +102,28 @@ python scripts/run_full_ci_suite.py
 | `python scripts/demo_ood.py` | Robustness | Reject nonsense (Recall > 80%) |
 | `python scripts/demo_stress.py` | Performance | p99 < 200ms under load |
 
-### Production Deployment
+### Production Deployment (Live on Railway)
+
+> 🟢 **Live URL**: `https://trellis-production-dbbf.up.railway.app`
+
 ```bash
-python scripts/test_deployment.py --url https://your-app.up.railway.app
+python scripts/test_deployment.py --url https://trellis-production-dbbf.up.railway.app
+```
+
+```text
+🚀 Testing API at: https://trellis-production-dbbf.up.railway.app
+
+1. Checking Health...
+   ✅ [PASS] Status: 200 | Latency: 2061ms
+      Model: optuna_dfr_v1 | Threads: 0.23252840160557384
+
+2. Classification (Valid Input)...
+   ✅ [PASS] Label: business | Conf: 0.56
+
+3. OOD Detection...
+   ✅ [PASS] Correctly identified as OOD.
+
+✨ Deployment Verified Successfully.
 ```
 
 ---

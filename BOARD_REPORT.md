@@ -53,6 +53,27 @@ Client → FastAPI (Async) → Sanitize → Cache (LRU) → PII Scan → DFR+SGD
 | **Demo Suite** | `scripts/demo_*.py` | 5 scripts for validation (Classify, OOD, stress) |
 | **Benchmarks** | `models/results.json` | Optuna results |
 
+## Live Deployment Proof (Railway)
+
+> 🟢 **Production URL**: `https://trellis-production-dbbf.up.railway.app`
+
+```text
+$ python scripts/test_deployment.py --url https://trellis-production-dbbf.up.railway.app
+
+🚀 Testing API at: https://trellis-production-dbbf.up.railway.app
+
+1. Checking Health...
+   ✅ [PASS] Status: 200 | Model: optuna_dfr_v1
+
+2. Classification (Valid Input)...
+   ✅ [PASS] Label: business | Conf: 0.56
+
+3. OOD Detection...
+   ✅ [PASS] Correctly identified as OOD.
+
+✨ Deployment Verified Successfully.
+```
+
 ## Future Recommendations
 1.  **Expand 'Other' Data**: To push OOD recall >95%, explicitly train on a "General English" corpus (e.g., Wikipedia random samples).
 2.  **Ensemble**: TF-IDF remains competitive on short docs. A routing model (Length < 50 → TF-IDF, Length > 50 → DFR) could push accuracy further.
