@@ -1,0 +1,8 @@
+[tool.mypy]
+files = ["app"]
+ignore_missing_imports = true
+check_untyped_defs = true
+disallow_untyped_defs = false
+warn_return_any = false
+warn_unused_ignores = true
+show_error_codes = true

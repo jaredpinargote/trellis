@@ -1,38 +1,37 @@
 # Base Image: Lightweight Python
 FROM python:3.10-slim as builder
 
-# Set env vars
+# Set env vars to suppress warnings and bytecode
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-# Install build deps (gcc often needed for some python packages like numpy)
-RUN apt-get update && apt-get install -y --no-install-recommends gcc && \
+# Install system build dependencies (gcc for numpy/spacy if needed)
+RUN apt-get update && apt-get install -y --no-install-recommends gcc build-essential && \
     rm -rf /var/lib/apt/lists/*
 
-# Install python dependencies
-COPY requirements.txt .
-# We remove 'torch' and 'transformers' if they are in requirements.txt but not needed for inference
-# For this specific deployment, we are using the Baseline model (scikit-learn only).
-# However, our requirements.txt might still have them. Ideally we'd have a requirements-prod.txt.
-# We will use the existing requirements.txt for now but ideally prune it.
+# Install python dependencies from production list
+COPY requirements-prod.txt .
 RUN pip install --upgrade pip
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements-prod.txt
 
-# Final Stage
+# Download Spacy model for Presidio (en_core_web_sm is ~12MB)
+RUN python -m spacy download en_core_web_sm
+
+# Final Stage: Runtime
 FROM python:3.10-slim
 
 WORKDIR /app
 
-# Copy installed packages from builder
+# Copy installed packages from builder to keep image small
 COPY --from=builder /usr/local/lib/python3.10/site-packages /usr/local/lib/python3.10/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
+# Scale-down: We don't need gcc in runtime
 # Copy Application Code
 COPY app ./app
-COPY models ./models
-# We don't need scripts or data in the production image
+COPY models/baseline.joblib ./models/baseline.joblib
 
 # Create non-root user for security
 RUN useradd -m appuser
