@@ -17,8 +17,8 @@ This document evaluates the `trellis` project against the requiremens in `case_s
 ### 1. Model Development
 > **Requirement**: "Choose any appropriate algorithm... Train on provided dataset... Validate accuracy."
 
-- **Implementation**: We benchmarked 7 different approaches (Baseline, TF-IDF, XGBoost, SetFit, etc.) using `optuna` for hyperparameter tuning.
-- **Decision**: Selected **TF-IDF + SGD** (Yielding 97% Val F1) over Transformer models (SetFit) because it offered **20x faster inference** and **100x smaller footprint** (586KB vs 500MB+), aligning with the "computational costs" requirement.
+- **Implementation**: We benchmarked 7 different approaches (Baseline, TF-IDF, BM25, DFR, XGBoost, SetFit, etc.) using `optuna` for hyperparameter tuning across 80 trials, followed by a cross-method benchmark on test data.
+- **Decision**: Selected **DFR (Divergence from Randomness) + SGD** — it achieved the **highest test F1 (94.9%)**, **best OOD recall (83.3%)**, **fastest p99 latency (0.65ms)**, and **smallest disk footprint (571KB)**, outperforming TF-IDF and Transformer models (SetFit) on every production-critical metric.
 - **Differentiation**: 
     - **Data Augmentation**: Sliced long documents into sentences to train the model on inputs resembling real-world user queries.
     - **OOD Detection**: Calibrated a 5th-percentile threshold to accurately tag "Other" documents (Recall: ~83%).

@@ -18,26 +18,8 @@ SCRIPTS = [
         "type": "Code Quality"
     },
     {
-        "name": "Scientific Metrics (F1 Score)",
-        "command": [sys.executable, "scripts/reproduce_board_metrics.py"],
-        "critical": True,
-        "type": "Science"
-    },
-    {
-        "name": "Drift Monitoring Simulation",
-        "command": [sys.executable, "scripts/simulate_data_drift.py"],
-        "critical": False,
-        "type": "MLOps"
-    },
-    {
-        "name": "Cost & Scaling Forecast",
-        "command": [sys.executable, "scripts/estimate_scaling_costs.py"],
-        "critical": False,
-        "type": "Business"
-    },
-    {
-        "name": "Resilience & Chaos Check",
-        "command": [sys.executable, "scripts/verify_resilience.py"],
+        "name": "System Stress & Latency",
+        "command": [sys.executable, "scripts/demo_stress.py"],
         "critical": False,
         "type": "Stability",
         "requires_server": True

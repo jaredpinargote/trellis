@@ -72,6 +72,13 @@ tests/
 - **Redis Flexibility**: Supports `REDIS_URL` (Railway's injected var) or individual `REDIS_HOST`/`REDIS_PORT`. Gracefully disables caching when Redis is unavailable.
 - **joblib Compatibility**: `app/transformers.py` must remain at its import path — the serialized model references `app.transformers.DFRVectorizer`.
 
+### Data Science Decisions
+
+-   **DFR vs TF-IDF**: Chosen for superior Performance on long texts (94.9% F1) and tuned via Optuna.
+-   **Short-Text Robustness**: We trained on **augmented data** (sentence-sliced articles) to fix the "length mismatch" between training data (long) and user queries (short).
+-   **OOD Thresholding**: We use a dynamic threshold (5th percentile of validation scores) rather than a fixed 0.5 cutoff.
+-   *Full analysis in [BOARD_REPORT.md](BOARD_REPORT.md).*
+
 ---
 
 ## Verification

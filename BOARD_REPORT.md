@@ -31,7 +31,7 @@ Our EDA (`notebooks/11_length_analysis.py`) revealed a critical gap:
 ## Technical Architecture
 
 ```
-Client → FastAPI (Assync) → Sanitize → Cache (LRU) → PII Scan → TF-IDF+SGD → Response
+Client → FastAPI (Async) → Sanitize → Cache (LRU) → PII Scan → DFR+SGD → Response
                                             ↕
                                     Telemetry (/metrics)
 ```
@@ -47,7 +47,7 @@ Client → FastAPI (Assync) → Sanitize → Cache (LRU) → PII Scan → TF-IDF
 | Artifact | Path | Description |
 |---|---|---|
 | **API Code** | `app/` | FastAPI, Pydantic, Security, Inference |
-| **Model** | `models/baseline.joblib` | Production v2 (Augmented TF-IDF) |
+| **Model** | `models/baseline.joblib` | Production v2 (DFR + Augmented Data) |
 | **Augmentation** | `scripts/11_augment_data.py` | Data strategy script |
 | **Insight** | `notebooks/11_length_analysis.py` | EDA proving length mismatch |
 | **Demo Suite** | `scripts/demo_*.py` | 5 scripts for validation (Classify, OOD, stress) |
@@ -55,4 +55,4 @@ Client → FastAPI (Assync) → Sanitize → Cache (LRU) → PII Scan → TF-IDF
 
 ## Future Recommendations
 1.  **Expand 'Other' Data**: To push OOD recall >95%, explicitly train on a "General English" corpus (e.g., Wikipedia random samples).
-2.  **Ensemble**: The DFR model is still superior on long docs. A routing model (Length < 50 → TF-IDF, Length > 50 → DFR) could achieve 96%+ F1.
+2.  **Ensemble**: TF-IDF remains competitive on short docs. A routing model (Length < 50 → TF-IDF, Length > 50 → DFR) could push accuracy further.

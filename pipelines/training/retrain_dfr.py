@@ -42,7 +42,15 @@ def main():
     print(f"  Params: {json.dumps(params, indent=4)}")
 
     # ── Load data ──────────────────────────────────────────────────
-    train = pd.read_csv(os.path.join(DATA_DIR, 'train.csv'))
+    # Check for augmented data first (Critical for short-text performance)
+    train_path = os.path.join(DATA_DIR, 'train_augmented.csv')
+    if not os.path.exists(train_path):
+        print("Warning: Augmented data not found. Falling back to original train.csv")
+        train_path = os.path.join(DATA_DIR, 'train.csv')
+    else:
+        print(f"Loading augmented data from {train_path}...")
+    
+    train = pd.read_csv(train_path)
     val = pd.read_csv(os.path.join(DATA_DIR, 'val.csv'))
     test = pd.read_csv(os.path.join(DATA_DIR, 'test.csv'))
 
@@ -78,10 +86,15 @@ def main():
     print(f"  Trained in {train_time:.1f}s")
 
     # ── Calibrate OOD threshold ────────────────────────────────────
-    val_probs = pipeline.predict_proba(X_val)
-    val_preds = pipeline.predict(X_val)
-    correct_mask = (val_preds == y_val)
-    correct_confs = np.max(val_probs, axis=1)[correct_mask]
+    # ── Calibrate OOD threshold ────────────────────────────────────
+    # Use a sample of augmented training data for calibration to include short texts
+    # (val.csv only has long texts, which skews threshold too high)
+    cal_subset = train.sample(min(2000, len(train)), random_state=42)
+    cal_probs = pipeline.predict_proba(cal_subset['text'])
+    cal_preds = pipeline.predict(cal_subset['text'])
+    
+    correct_mask = (cal_preds == cal_subset['category'])
+    correct_confs = np.max(cal_probs, axis=1)[correct_mask]
     threshold = float(np.percentile(correct_confs, 1)) if len(correct_confs) > 0 else 0.5
     print(f"  OOD threshold: {threshold:.4f}")
 
