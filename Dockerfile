@@ -1,5 +1,5 @@
 # Base Image: Lightweight Python
-FROM python:3.10-slim AS builder
+FROM python:3.13-slim AS builder
 
 # Set env vars to suppress warnings and bytecode
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -20,7 +20,7 @@ RUN pip install --no-cache-dir -r requirements-prod.txt
 RUN python -m spacy download en_core_web_sm
 
 # Final Stage: Runtime
-FROM python:3.10-slim
+FROM python:3.13-slim
 
 WORKDIR /app
 
