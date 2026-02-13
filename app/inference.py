@@ -4,6 +4,9 @@ import numpy as np
 from pathlib import Path
 from .schemas import PredictionResponse
 
+# Import custom transformers so joblib can deserialize them
+# from .transformers import DFRVectorizer  # noqa: F401 (Reverted to TF-IDF for stability)
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 MODEL_PATH = BASE_DIR / "models" / "baseline.joblib"
 
@@ -13,7 +16,7 @@ class ModelWrapper:
         self.pipeline = None
         self.threshold = 0.5
         self.classes_ = []
-        self.model_version = "baseline_v1_tfidf"
+        self.model_version = "unknown"
         self._load_model()
 
     def _load_model(self):
@@ -25,7 +28,7 @@ class ModelWrapper:
 
         self.pipeline = artifact.get('pipeline')
         self.threshold = artifact.get('threshold', 0.5)
-        self.model_version = artifact.get('model_version', 'baseline_v1_tfidf')
+        self.model_version = artifact.get('model_version', 'unknown')
 
         if self.pipeline is None:
             raise ValueError("Joblib artifact missing 'pipeline' key")

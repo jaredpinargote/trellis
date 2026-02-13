@@ -1,0 +1,54 @@
+﻿================================================================================
+DEMO: Document Classification Across All Categories
+================================================================================
+  Model: optuna_dfr_v1 | Threshold: 0.4606
+
+Expected         Predicted          Conf   OOD     ms  Text Preview
+.venv\Scripts\python.exe : 
+Traceback (most recent 
+call last):
+At line:1 char:1
++ .venv\Scripts\python.exe 
+scripts/demo_classify.py 
+2>&1 | Out-File -En ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~
+    + CategoryInfo         
+     : NotSpeci    fied: 
+(Traceback     (most 
+recent call     
+last)::String) [    ], 
+RemoteExceptio    n
+    + FullyQualifiedE    
+rrorId : NativeCo    
+mmandError
+ 
+  File "C:\Users\jpinargo\P
+rojects\trellis\scripts\dem
+o_classify.py", line 64, 
+in <module>
+    main()
+    ~~~~^^
+  File "C:\Users\jpinargo\P
+rojects\trellis\scripts\dem
+o_classify.py", line 46, 
+in main
+    print("\u2500" * 80)
+    ~~~~~^^^^^^^^^^
+  File "C:\Users\jpinargo\A
+ppData\Local\Programs\Pytho
+n\Python313\Lib\encodings\c
+p1252.py", line 19, in 
+encode
+    return codecs.charmap_e
+ncode(input,self.errors,enc
+oding_table)[0]
+           ~~~~~~~~~~~~~~~~
+~~~~~^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^
+UnicodeEncodeError: 
+'charmap' codec can't 
+encode characters in 
+position 0-79: character 
+maps to <undefined>

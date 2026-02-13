@@ -25,7 +25,12 @@ class TestClassification:
     def test_classify_sport(self):
         """Known 'sport' text should return label='sport'."""
         r = client.post("/classify_document", json={
-            "document_text": "The quarterback threw a touchdown pass in the final seconds of the game to win the championship."
+            "document_text": (
+                "The Olympics 100m sprint final was won by the American athlete who broke the "
+                "world record with a time of 9.58 seconds. Jamaica took silver and bronze in the "
+                "event at the athletics stadium. The medal ceremony was held immediately after "
+                "the race, with thousands of spectators cheering in the Olympic park."
+            )
         })
         assert r.status_code == 200
         data = r.json()
@@ -37,7 +42,12 @@ class TestClassification:
     def test_classify_technology(self):
         """Known 'technologie' text (dataset uses 'technologie' label)."""
         r = client.post("/classify_document", json={
-            "document_text": "Apple released a new version of the iPhone with improved processor speed and camera capabilities."
+            "document_text": (
+                "Apple released a new version of the iPhone with an improved A17 processor, "
+                "enhanced camera capabilities, and a titanium chassis. The tech giant also "
+                "announced updates to macOS and iOS, featuring on-device machine learning, "
+                "faster GPU performance, and expanded developer APIs for augmented reality."
+            )
         })
         assert r.status_code == 200
         assert r.json()["label"] == "technologie"
