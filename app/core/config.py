@@ -23,6 +23,7 @@ class Settings(BaseSettings):
 
     # Model
     MODEL_THRESHOLD: float = 0.5
+    MODEL_PATH: str = "models/baseline.joblib"
 
 
 @lru_cache()

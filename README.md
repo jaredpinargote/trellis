@@ -1,5 +1,11 @@
 # Trellis — Document Classification API
 
+**Interview Deliverables:**
+- 📄 [Board Report (Executive Summary)](submission_docs/BOARD_REPORT.md)
+- 📝 [Self-Assessment & Reviewer Guide](submission_docs/self_assessment.md)
+- 🧠 [Project Reflection](submission_docs/PROJECT_REFLECTION.md)
+- 📋 [Original Case Study Requirements](submission_docs/case_study_original.md)
+
 A production-ready REST API that classifies documents into 10 categories (business, politics, sport, etc.) with out-of-distribution (OOD) detection. Built with FastAPI, optimized via Optuna across 7 retrieval methods, and enhanced with data augmentation for short-text robustness.
 
 ## Quick Start
@@ -26,6 +32,24 @@ uvicorn app.main:app --port 8000
 ### Docker
 ```bash
 docker-compose up -d --build
+```
+
+---
+
+## Developer Guide
+
+### Dependencies
+- **`requirements.txt`**: Application dependencies (use for `pip install`).
+- **`pyproject.toml`**: Configuration for dev tools (`pyright`, `pytest`).
+- **`requirements-prod.txt`**: Optimized dependencies for the Docker build.
+
+### Testing New Models
+Training scripts (e.g., `pipelines/training/retrain_dfr.py`) now output to `models/dfr_candidate.joblib` to prevent overwriting the production baseline.
+
+To test a candidate model:
+```bash
+# Run the API with the candidate model
+MODEL_PATH=models/dfr_candidate.joblib uvicorn app.main:app --port 8000
 ```
 
 ---

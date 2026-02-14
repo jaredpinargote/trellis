@@ -120,19 +120,13 @@ def main():
         f1 = report[cls]['f1-score']
         print(f"    {cls:20s} {f1:.4f}")
 
-    # ── Save artifact ──────────────────────────────────────────────
-    artifact = {
-        'pipeline': pipeline,
-        'threshold': threshold,
-        'model_version': 'optuna_dfr_v1',
-        'metrics': {
-            'test_f1_weighted': test_f1,
-            'ood_recall': ood_recall,
-            'classification_report': report
-        }
-    }
-    model_path = os.path.join(MODEL_DIR, 'baseline.joblib')
-    joblib.dump(artifact, model_path)
+    # 6. Save Artifact
+    model_path = "models/dfr_candidate.joblib"
+    joblib.dump({
+        "pipeline": pipeline,
+        "threshold": threshold,
+        "model_version": f"dfr_retrained_{int(time.time())}"
+    }, model_path)
     print(f"\n  Model saved to {model_path}")
     print(f"  Artifact size: {os.path.getsize(model_path)/1024:.0f} KB")
 

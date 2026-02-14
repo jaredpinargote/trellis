@@ -1,3 +1,9 @@
+"""
+Development Entry Point.
+
+Run this script directly for local debugging (e.g. in IDEs).
+For production, use the Dockerfile which runs uvicorn directly.
+"""
 from app.api.main import app
 
 if __name__ == "__main__":

@@ -15,11 +15,10 @@ class ModelService:
         self.classes_ = []
         self.model_version = "unknown"
         
-        # Resolve model path relative to project root (assuming we are in app/services)
-        # Better: config should provide MODEL_PATH, but for now we follow the pattern
-        # current file: app/services/inference.py -> root is ../..
-        self.base_dir = Path(__file__).resolve().parent.parent.parent
-        self.model_path = self.base_dir / "models" / "baseline.joblib"
+        # Resolve model path from settings (can be overridden by env var)
+        self.model_path = Path(settings.MODEL_PATH)
+        if not self.model_path.is_absolute():
+            self.model_path = Path(__file__).resolve().parent.parent.parent / self.model_path
         
         self._load_model()
 
