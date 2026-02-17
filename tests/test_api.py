@@ -145,6 +145,14 @@ class TestSecurity:
 
     def test_unicode_handled(self):
         r = client.post("/classify_document", json={
-            "document_text": "The caf\u00e9 served \u00e9clairs while discussing politique internationale."
+            "document_text": "This is a document with some unicode symbols: \u2713 \u2714 \u2715."
         })
         assert r.status_code == 200
+
+    def test_pii_blocked(self):
+        """Requests with PII (e.g. email) should be blocked with 400."""
+        r = client.post("/classify_document", json={
+            "document_text": "Contact me at support@example.com for more information."
+        })
+        assert r.status_code == 400
+        assert "Security Policy Violation" in r.json()["detail"]

@@ -62,7 +62,7 @@ async def classify_document_endpoint(
         telemetry.record_request(latency, cached.label, is_cached=True)
         return cached
 
-    # 3. PII Scan (log only, does not block)
+    # 3. PII Scan (fail-closed, blocks if PII detected)
     check_pii(clean_text)
 
     # 4. Inference
