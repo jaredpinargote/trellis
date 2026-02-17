@@ -28,7 +28,7 @@ To secure a "Strong Hire" signal for a $230k+ role, we must close the gap on **D
 2.  **CI/CD Automation**:
     - Create `.github/workflows/ci.yml` to run tests and linting on every push.
 3.  **Integration Testing**:
-    - Add `scripts/test_integration.py` to verify the Docker container works end-to-end.
+    - Add `dev_scripts/test_integration.py` to verify the Docker container works end-to-end.
 4.  **Final Polish**:
     - Add Type Checking (`mypy`) to the CI pipeline.
 
