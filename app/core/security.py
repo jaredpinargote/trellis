@@ -98,15 +98,33 @@ def sanitize_text(text: str) -> str:
 
 def check_pii(text: str):
     """
-    Scans text for PII and logs a warning if found.
-    Does NOT block the request.
+    Scans text for PII. Raises HTTPException if PII is detected
+    or if the PII detection service is unavailable (fail-closed).
     """
-    if HAS_PRESIDIO and analyzer:
+    if not HAS_PRESIDIO or not analyzer:
+        logger.error("[SECURITY] PII detection service is unavailable. Blocking request.")
+        raise HTTPException(
+            status_code=500,
+            detail="Security check failure: PII detection service is unavailable."
+        )
+
+    try:
         results = analyzer.analyze(
             text=text,
             entities=["PERSON", "PHONE_NUMBER", "EMAIL_ADDRESS", "US_SSN"],
             language='en'
         )
-        if results:
-            pii_types = list(set([res.entity_type for res in results]))
-            logger.warning(f"[SECURITY] PII Detected in request: {pii_types}")
+    except Exception as e:
+        logger.error(f"[SECURITY] PII detection failed: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Security check failure: PII detection analysis failed."
+        )
+
+    if results:
+        pii_types = list(set([res.entity_type for res in results]))
+        logger.warning(f"[SECURITY] PII Detected in request: {pii_types}")
+        raise HTTPException(
+            status_code=400,
+            detail=f"Security Policy Violation: PII detected ({', '.join(pii_types)})."
+        )
