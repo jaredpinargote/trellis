@@ -1,0 +1,35 @@
+﻿python : ImportError 
+while loading 
+conftest 'C:\Users\jpi
+nargo\Projects\trellis
+\tests\conftest.py'.
+At line:1 char:1
++ python -m pytest 
+2>&1 | Out-File 
+-FilePath C:\Users\jpi
+nargo\Projects ...
++ 
+~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo    
+          : NotSpeci  
+  fied: (ImportErro   
+ r whi...s\conftes    
+t.py'.:String) []    
+, RemoteException
+    + FullyQualifiedE 
+   rrorId : NativeCo  
+  mmandError
+ 
+tests\conftest.py:3: 
+in <module>
+    from app.api.main 
+import app
+app\api\main.py:8: in 
+<module>
+    from 
+fastapi_limiter 
+import FastAPILimiter
+E   
+ModuleNotFoundError: 
+No module named 
+'fastapi_limiter'

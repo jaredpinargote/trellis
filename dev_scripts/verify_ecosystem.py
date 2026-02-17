@@ -13,13 +13,13 @@ if sys.platform == "win32":
 SCRIPTS = [
     {
         "name": "Unit Tests & Type Checks",
-        "command": [sys.executable, "scripts/run_full_ci_suite.py"],
+        "command": [sys.executable, "dev_scripts/run_full_ci_suite.py"],
         "critical": True,
         "type": "Code Quality"
     },
     {
         "name": "System Stress & Latency",
-        "command": [sys.executable, "scripts/demo_stress.py"],
+        "command": [sys.executable, "dev_scripts/demo_stress.py"],
         "critical": False,
         "type": "Stability",
         "requires_server": True
