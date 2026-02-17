@@ -32,6 +32,7 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 # Copy Application Code
 COPY app ./app
 COPY models/baseline.joblib ./models/baseline.joblib
+COPY scripts ./scripts
 
 # Create non-root user for security
 RUN useradd -m appuser

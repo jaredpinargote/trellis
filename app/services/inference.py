@@ -1,3 +1,4 @@
+import asyncio
 import joblib
 import logging
 import time
@@ -74,3 +75,7 @@ class ModelService:
             processing_time_ms=round(duration, 2),
             model_version=self.model_version
         )
+
+    async def predict_async(self, document_text: str) -> PredictionResponse:
+        """Async wrapper for CPU-bound prediction."""
+        return await asyncio.to_thread(self.predict, document_text)
