@@ -1,15 +1,25 @@
 import re
 import logging
 import secrets
+import json
 from fastapi import Request, HTTPException, Security, Depends, status
 from fastapi.security import APIKeyHeader
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.core.config import Settings, get_settings
+from app.core.database import get_db
+from app.models import APIKey
+from app.services.cache import CacheManager
+# Import locally inside dependency to avoid potential circular imports if structure changes later?
+# No, let's try top level first.
+from app.api.dependencies import get_cache_service
 
 logger = logging.getLogger(__name__)
 
 try:
-    from presidio_analyzer import AnalyzerEngine
-    from presidio_analyzer.nlp_engine import NlpEngineProvider
+    from presidio_analyzer import AnalyzerEngine # type: ignore
+    from presidio_analyzer.nlp_engine import NlpEngineProvider # type: ignore
     HAS_PRESIDIO = True
     
     # Configure to use en_core_web_sm (small model) matching Dockerfile
@@ -119,16 +129,57 @@ api_key_header_scheme = APIKeyHeader(name="X-API-Key", auto_error=False)
 
 async def get_api_key(
     api_key_header: str = Security(api_key_header_scheme),
-    settings: Settings = Depends(get_settings),
-):
+    db: AsyncSession = Depends(get_db),
+    cache_service: CacheManager = Depends(get_cache_service)
+) -> APIKey:
     if not api_key_header:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Missing API Key",
         )
-    if not secrets.compare_digest(api_key_header, settings.API_KEY):
+
+    # 1. Check Redis Cache
+    cache_key = f"apikey:{api_key_header}"
+    if cache_service.enabled and cache_service.client:
+        try:
+            cached_data = await cache_service.client.get(cache_key)
+            if cached_data:
+                data = json.loads(cached_data)
+                # Return a valid APIKey object (detached)
+                return APIKey(
+                    key=data['key'],
+                    rate_limit_per_minute=data.get('rate_limit_per_minute', 60),
+                    owner=data.get('owner', 'Cached'),
+                    is_active=True
+                )
+        except Exception as e:
+            logger.warning(f"Auth Cache Get Error: {e}")
+
+    # 2. Check Database
+    try:
+        result = await db.execute(select(APIKey).where(APIKey.key == api_key_header, APIKey.is_active == True))
+        api_key_obj = result.scalar_one_or_none()
+    except Exception as e:
+        logger.error(f"Database Auth Error: {e}")
+        raise HTTPException(status_code=500, detail="Authentication Service Unavailable")
+
+    if not api_key_obj:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Invalid API Key",
+            detail="Invalid or Inactive API Key",
         )
-    return api_key_header
+
+    # 3. Set Cache
+    if cache_service.enabled and cache_service.client:
+        try:
+            payload = {
+                "key": api_key_obj.key,
+                "rate_limit_per_minute": api_key_obj.rate_limit_per_minute,
+                "owner": api_key_obj.owner
+            }
+            # Cache for 5 minutes
+            await cache_service.client.setex(cache_key, 300, json.dumps(payload))
+        except Exception as e:
+            logger.warning(f"Auth Cache Set Error: {e}")
+
+    return api_key_obj

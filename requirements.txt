@@ -16,3 +16,7 @@ joblib
 optuna
 mypy
 pydantic-settings
+sqlalchemy
+asyncpg
+fastapi-limiter==0.1.6
+greenlet

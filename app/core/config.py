@@ -25,8 +25,12 @@ class Settings(BaseSettings):
     MODEL_THRESHOLD: float = 0.5
     MODEL_PATH: str = "models/baseline.joblib"
 
+    # Database
+    DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/trellis"
+
     # Security
     API_KEY: str = "dev-secret-key"
+    RATE_LIMIT_PER_MINUTE: int = 60
 
 
 @lru_cache()
