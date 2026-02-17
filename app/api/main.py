@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, Request
 from fastapi.responses import JSONResponse
 from app.schemas import DocumentRequest, PredictionResponse
-from app.core.security import validate_payload_size, sanitize_text, check_pii
+from app.core.security import validate_payload_size, sanitize_text, check_pii, get_api_key
 from app.core.telemetry import Telemetry
 from app.core.config import get_settings, Settings
 from app.api.dependencies import get_model_service, get_cache_service
@@ -38,7 +38,7 @@ telemetry = Telemetry()
 @app.post(
     "/classify_document",
     response_model=PredictionResponse,
-    dependencies=[Depends(validate_payload_size)]
+    dependencies=[Depends(validate_payload_size), Depends(get_api_key)]
 )
 async def classify_document_endpoint(
     request: DocumentRequest,

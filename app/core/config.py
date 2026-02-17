@@ -25,6 +25,9 @@ class Settings(BaseSettings):
     MODEL_THRESHOLD: float = 0.5
     MODEL_PATH: str = "models/baseline.joblib"
 
+    # Security
+    API_KEY: str = "dev-secret-key"
+
 
 @lru_cache()
 def get_settings() -> Settings:

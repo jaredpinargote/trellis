@@ -6,6 +6,7 @@ from fastapi.testclient import TestClient
 from app.main import app
 
 client = TestClient(app)
+client.headers["X-API-Key"] = "dev-secret-key"
 
 
 # ── Health ──────────────────────────────────────────────────────────
@@ -18,6 +19,23 @@ class TestHealth:
         assert data["model_loaded"] is True
         assert "model_version" in data
         assert "model_threshold" in data
+
+
+# ── Auth ────────────────────────────────────────────────────────────
+class TestAuth:
+    def test_missing_api_key(self):
+        # Create a new client to avoid the global header
+        no_auth_client = TestClient(app)
+        r = no_auth_client.post("/classify_document", json={"document_text": "test"})
+        assert r.status_code == 401
+        assert r.json()["detail"] == "Missing API Key"
+
+    def test_invalid_api_key(self):
+        bad_auth_client = TestClient(app)
+        bad_auth_client.headers["X-API-Key"] = "wrong-key"
+        r = bad_auth_client.post("/classify_document", json={"document_text": "test"})
+        assert r.status_code == 403
+        assert r.json()["detail"] == "Invalid API Key"
 
 
 # ── Classification ──────────────────────────────────────────────────
