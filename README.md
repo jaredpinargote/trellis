@@ -29,6 +29,16 @@ uvicorn app.main:app --port 8000
 ```
 > API: `http://localhost:8000` · Docs: `http://localhost:8000/docs`
 
+### Authentication
+The API is protected by an API Key.
+- **Header**: `X-API-Key`
+- **Default Key**: `dev-secret-key` (configured in `.env.example`)
+
+To test authentication automatically:
+```bash
+python dev_scripts/verify_auth_flow.py
+```
+
 ### Docker
 ```bash
 docker-compose up -d --build
@@ -76,7 +86,7 @@ pipelines/
 ├── data_prep/              # Data consolidation, splitting, validation, augmentation
 └── training/               # Model training, hyperparameter search, benchmarks
 
-scripts/                    # Operational scripts
+dev_scripts/                    # Operational scripts
 ├── demo_classify.py        # Live classification demo
 ├── demo_ood.py             # OOD detection demo
 ├── demo_stress.py          # Load testing
@@ -116,22 +126,22 @@ pyright app
 pytest
 
 # Full CI suite (types + tests + Docker)
-python scripts/run_full_ci_suite.py
+python dev_scripts/run_full_ci_suite.py
 ```
 
 ### Live Demos (requires running server)
 | Script | Tests | Expected |
 |--------|-------|----------|
-| `python scripts/demo_classify.py` | Accuracy | ~73% on short-text queries |
-| `python scripts/demo_ood.py` | Robustness | Reject nonsense (Recall > 80%) |
-| `python scripts/demo_stress.py` | Performance | p99 < 200ms under load |
+| `python dev_scripts/demo_classify.py` | Accuracy | ~73% on short-text queries |
+| `python dev_scripts/demo_ood.py` | Robustness | Reject nonsense (Recall > 80%) |
+| `python dev_scripts/demo_stress.py` | Performance | p99 < 200ms under load |
 
 ### Production Deployment (Live on Railway)
 
 > 🟢 **Live URL**: `https://trellis-production-dbbf.up.railway.app`
 
 ```bash
-python scripts/test_deployment.py --url https://trellis-production-dbbf.up.railway.app
+python dev_scripts/test_deployment.py --url https://trellis-production-dbbf.up.railway.app
 ```
 
 ```text
